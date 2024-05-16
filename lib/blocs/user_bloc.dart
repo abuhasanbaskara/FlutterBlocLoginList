@@ -8,18 +8,49 @@ part 'user_state.dart';
 
 class UserBloc extends Bloc<UserEvent, UserState> {
   final ApiService apiService;
+  int currentPage = 1;
+  bool hasReachedMax = false;
 
   UserBloc({required this.apiService}) : super(UserInitial()) {
     on<FetchUsers>(_onFetchUsers);
   }
 
-  Future<void> _onFetchUsers(FetchUsers event, Emitter<UserState> emit) async {
-    emit(UserLoading());
+  void _onFetchUsers(FetchUsers event, Emitter<UserState> emit) async {
+    if (state is UserLoading) return;
+
+    final currentState = state;
+    var users = <User>[];
+
+    if (currentState is UserLoaded) {
+      users = currentState.users;
+      currentPage = currentState.page;
+      hasReachedMax = currentState.hasReachedMax;
+    }
+
+    if (hasReachedMax) {
+      print('Reached max users');
+      return;
+    }
+
+    emit(UserLoading(users: users));
 
     try {
-      final users = await apiService.fetchUsers(event.page);
-      emit(UserLoaded(users: users));
+      print('Fetching users from page: $currentPage');
+      final response = await apiService.fetchUsers(page: currentPage);
+      if (response.isEmpty) {
+        hasReachedMax = true;
+      } else {
+        currentPage++;
+        users.addAll(response);
+      }
+      print('Fetched ${response.length} users from page: $currentPage');
+      emit(UserLoaded(
+        users: users,
+        page: currentPage,
+        hasReachedMax: response.isEmpty,
+      ));
     } catch (error) {
+      print('Error fetching users: $error');
       emit(UserError(error: error.toString()));
     }
   }

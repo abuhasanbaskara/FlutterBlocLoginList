@@ -9,21 +9,46 @@ abstract class UserState extends Equatable {
 
 class UserInitial extends UserState {}
 
-class UserLoading extends UserState {}
-
-class UserLoaded extends UserState {
+class UserLoading extends UserState {
   final List<User> users;
 
-  const UserLoaded({required this.users});
+  UserLoading({required this.users});
 
   @override
   List<Object> get props => [users];
 }
 
+class UserLoaded extends UserState {
+  final List<User> users;
+  final int page;
+  final bool hasReachedMax;
+
+  UserLoaded({
+    required this.users,
+    required this.page,
+    required this.hasReachedMax,
+  });
+
+  UserLoaded copyWith({
+    List<User>? users,
+    int? page,
+    bool? hasReachedMax,
+  }) {
+    return UserLoaded(
+      users: users ?? this.users,
+      page: page ?? this.page,
+      hasReachedMax: hasReachedMax ?? this.hasReachedMax,
+    );
+  }
+
+  @override
+  List<Object> get props => [users, page, hasReachedMax];
+}
+
 class UserError extends UserState {
   final String error;
 
-  const UserError({required this.error});
+  UserError({required this.error});
 
   @override
   List<Object> get props => [error];

@@ -12,24 +12,36 @@ class UserListView extends StatelessWidget {
         appBar: AppBar(title: Text('User List')),
         body: BlocBuilder<UserBloc, UserState>(
           builder: (context, state) {
-            if (state is UserLoading) {
+            if (state is UserLoading && state.users.isEmpty) {
               return Center(child: CircularProgressIndicator());
             } else if (state is UserLoaded) {
-              return ListView.builder(
-                itemCount: state.users.length,
-                itemBuilder: (context, index) {
-                  final user = state.users[index];
-                  return ListTile(
-                    leading: Image.network(user.avatar),
-                    title: Text('${user.firstName} ${user.lastName}'),
-                    subtitle: Text(user.email),
-                  );
+              return NotificationListener<ScrollNotification>(
+                onNotification: (ScrollNotification scrollInfo) {
+                  if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
+                      !state.hasReachedMax) {
+                    context.read<UserBloc>().add(FetchUsers(page: state.page));
+                  }
+                  return false;
                 },
+                child: ListView.builder(
+                  itemCount: state.hasReachedMax ? state.users.length : state.users.length + 1,
+                  itemBuilder: (context, index) {
+                    if (index >= state.users.length) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+                    final user = state.users[index];
+                    return ListTile(
+                      leading: Image.network(user.avatar),
+                      title: Text('${user.firstName} ${user.lastName}'),
+                      subtitle: Text(user.email),
+                    );
+                  },
+                ),
               );
             } else if (state is UserError) {
               return Center(child: Text(state.error));
             } else {
-              return Center(child: Text('No users found'));
+              return Container();
             }
           },
         ),

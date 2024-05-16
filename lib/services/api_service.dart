@@ -19,15 +19,18 @@ class ApiService {
     }
   }
 
-  Future<List<User>> fetchUsers(int page) async {
-    final response = await http.get(Uri.parse('$baseUrl/users?page=$page'));
+  Future<List<User>> fetchUsers({required int page}) async {
+    final url = '$baseUrl/users?page=$page';
+    print('Fetching users from: $url');
+
+    final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
-      final body = json.decode(response.body);
-      final List usersJson = body['data'];
-      return usersJson.map((json) => User.fromJson(json)).toList();
+      final data = json.decode(response.body)['data'] as List;
+      return data.map((user) => User.fromJson(user)).toList();
     } else {
-      throw Exception('Failed to fetch users');
+      print('Failed to load users: ${response.statusCode}');
+      throw Exception('Failed to load users: ${response.statusCode}');
     }
   }
 }
